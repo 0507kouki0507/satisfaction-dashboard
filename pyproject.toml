@@ -1,7 +1,7 @@
 [project]
 name = "satisfaction-dashboard"
 version = "0.1.0"
-description = "Add your description here"
+description = "オンラインスクール顧客満足度ダッシュボード"
 requires-python = ">=3.14"
 dependencies = [
     "bcrypt>=5.0.0",

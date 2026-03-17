@@ -24,8 +24,11 @@ COLUMN_MAP = {
     "Project": "project_name",
     "満足度スコア": "score",
     "score": "score",
-    "score_1_to_5": "score",
+    "score_1_to_10": "score",
     "Score": "score",
+    "自身の取り組み": "self_effort_score",
+    "self_effort_score": "self_effort_score",
+    "取り組みスコア": "self_effort_score",
     "NPSスコア": "nps_score",
     "nps_score": "nps_score",
     "NPS": "nps_score",
@@ -66,7 +69,8 @@ def _generate_demo_data() -> pd.DataFrame:
                 rows.append({
                     "date": date,
                     "project_name": project,
-                    "score": round(rng.gauss(4.1, 0.6), 1),
+                    "score": round(rng.gauss(8.1, 1.2), 1),
+                    "self_effort_score": round(rng.gauss(72, 15), 0),
                     "nps_score": rng.randint(1, 10),
                     "comment": rng.choice(_DEMO_COMMENTS) if rng.random() > 0.6 else None,
                     "total_students": total,
@@ -74,7 +78,8 @@ def _generate_demo_data() -> pd.DataFrame:
                 })
 
     df = pd.DataFrame(rows)
-    df["score"] = df["score"].clip(1, 5)
+    df["score"] = df["score"].clip(1, 10)
+    df["self_effort_score"] = df["self_effort_score"].clip(1, 100)
     return df.sort_values("date").reset_index(drop=True)
 
 
@@ -100,13 +105,14 @@ def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """列名を正規化し、型変換を行う"""
     df = df.rename(columns={col: COLUMN_MAP[col] for col in df.columns if col in COLUMN_MAP})
 
-    required_cols = ["date", "project_name", "score", "nps_score", "comment", "total_students", "respondents"]
+    required_cols = ["date", "project_name", "score", "self_effort_score", "nps_score", "comment", "total_students", "respondents"]
     for col in required_cols:
         if col not in df.columns:
             df[col] = pd.NA
 
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df["score"] = pd.to_numeric(df["score"], errors="coerce")
+    df["self_effort_score"] = pd.to_numeric(df["self_effort_score"], errors="coerce")
     df["nps_score"] = pd.to_numeric(df["nps_score"], errors="coerce")
     df["total_students"] = pd.to_numeric(df["total_students"], errors="coerce")
     df["respondents"] = pd.to_numeric(df["respondents"], errors="coerce")
@@ -145,7 +151,7 @@ def load_all_data() -> pd.DataFrame:
             st.warning(f"スプレッドシート {sheet_id} の読み込みに失敗しました: {e}")
 
     if not dfs:
-        return pd.DataFrame(columns=["date", "project_name", "score", "nps_score", "comment", "total_students", "respondents"])
+        return pd.DataFrame(columns=["date", "project_name", "score", "self_effort_score", "nps_score", "comment", "total_students", "respondents"])
 
     combined = pd.concat(dfs, ignore_index=True)
     combined = combined.sort_values("date").reset_index(drop=True)

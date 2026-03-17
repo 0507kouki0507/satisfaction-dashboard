@@ -4,7 +4,13 @@ import pandas as pd
 import streamlit as st
 
 from auth import setup_authenticator, show_login_page, show_logout_button
-from charts import bar_chart_project_comparison, histogram_score_distribution, line_chart_monthly_trend
+from charts import (
+    bar_chart_project_comparison,
+    histogram_score_distribution,
+    histogram_self_effort_distribution,
+    line_chart_monthly_trend,
+    line_chart_self_effort_trend,
+)
 from data import filter_data, get_nps_score, get_response_rate, load_all_data, _is_demo_mode
 
 
@@ -16,31 +22,39 @@ st.set_page_config(
 
 
 def show_kpi_cards(df: pd.DataFrame) -> None:
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     avg_score = df["score"].mean()
     median_score = df["score"].median()
+    avg_effort = df["self_effort_score"].mean()
     response_rate = get_response_rate(df)
     nps = get_nps_score(df)
 
     with col1:
         st.metric(
-            label="平均スコア",
-            value=f"{avg_score:.2f}" if not pd.isna(avg_score) else "—",
-            help="1〜5点スケール",
+            label="平均満足度スコア",
+            value=f"{avg_score:.1f}" if not pd.isna(avg_score) else "—",
+            help="1〜10点スケール",
         )
     with col2:
         st.metric(
             label="中央値スコア",
-            value=f"{median_score:.2f}" if not pd.isna(median_score) else "—",
+            value=f"{median_score:.1f}" if not pd.isna(median_score) else "—",
+            help="1〜10点スケール",
         )
     with col3:
+        st.metric(
+            label="平均 自身の取り組み",
+            value=f"{avg_effort:.1f}" if not pd.isna(avg_effort) else "—",
+            help="1〜100点スケール",
+        )
+    with col4:
         st.metric(
             label="回答率",
             value=f"{response_rate:.1f}%" if response_rate > 0 else "—",
             help="回答者数 ÷ 受講生数",
         )
-    with col4:
+    with col5:
         st.metric(
             label="NPS スコア",
             value=f"{nps:.1f}" if nps is not None else "—",
@@ -122,7 +136,8 @@ def show_dashboard(name: str) -> None:
 
     st.divider()
 
-    # グラフ
+    # グラフ：満足度
+    st.subheader("満足度スコア（1〜10）")
     col_left, col_right = st.columns([2, 1])
     with col_left:
         st.plotly_chart(line_chart_monthly_trend(filtered_df), use_container_width=True)
@@ -130,6 +145,16 @@ def show_dashboard(name: str) -> None:
         st.plotly_chart(histogram_score_distribution(filtered_df), use_container_width=True)
 
     st.plotly_chart(bar_chart_project_comparison(filtered_df), use_container_width=True)
+
+    st.divider()
+
+    # グラフ：自身の取り組み
+    st.subheader("自身の取り組みスコア（1〜100）")
+    col_left2, col_right2 = st.columns([2, 1])
+    with col_left2:
+        st.plotly_chart(line_chart_self_effort_trend(filtered_df), use_container_width=True)
+    with col_right2:
+        st.plotly_chart(histogram_self_effort_distribution(filtered_df), use_container_width=True)
 
     st.divider()
 
