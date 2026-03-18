@@ -544,11 +544,11 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
         )
 
     if has_total:
-        resp_value = f"{int(respondents):,}"
-        resp_sub   = f"受講生 {int(total_students):,} 人中"
+        total_str = f"{int(total_students):,}"
     else:
-        resp_value = f"{int(respondents):,}"
-        resp_sub   = "アンケート回答数"
+        total_str = "?"
+    resp_value = f"{int(respondents):,} / {total_str}"
+    resp_sub   = "回答者数 ÷ 受講生数"
 
     html = (
         card("⭐", "平均満足度",
@@ -561,7 +561,7 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
                f"{avg_effort:.1f}" if not pd.isna(avg_effort) else "—",
                "中央値 / 100点満点", "#06B6D4", ec, _delta_html(ed, edir, "pt"))
         + card("👥", "回答者数",
-               resp_value, resp_sub, "#8B5CF6", "#0F172A")
+               f'<span style="font-size:20px">{resp_value}</span>', resp_sub, "#8B5CF6", "#0F172A")
         + card("📝", "回答率",
                rr_val,
                "アンケート回答者 ÷ 受講生", "#10B981", rr_color)
