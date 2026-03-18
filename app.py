@@ -567,7 +567,7 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
                "アンケート回答者 ÷ 受講生", "#10B981", rr_color)
         + card("📣", "NPS スコア",
                f"{nps:.1f}" if nps is not None else "—",
-               "推薦者% − 批判者%", "#F59E0B", nc)
+               "おすすめ度 中央値 / 10", "#F59E0B", nc)
     )
     st.markdown(f'<div class="kpi-grid">{html}</div>', unsafe_allow_html=True)
 

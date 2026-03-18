@@ -287,10 +287,8 @@ def get_response_rate(df: pd.DataFrame) -> float:
 
 
 def get_nps_score(df: pd.DataFrame) -> float | None:
-    """NPS スコア（推薦者% − 批判者%）"""
+    """NPS スコア（中央値）"""
     vals = df["nps_score"].dropna()
     if vals.empty:
         return None
-    promoters = (vals >= 9).sum()
-    detractors = (vals <= 6).sum()
-    return float((promoters - detractors) / len(vals) * 100)
+    return float(vals.median())
