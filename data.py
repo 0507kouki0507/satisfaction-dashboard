@@ -161,6 +161,37 @@ def _worksheet_to_df(worksheet) -> pd.DataFrame | None:
     return df
 
 
+def debug_sheet_info() -> list[dict]:
+    """デバッグ用：各シートのタブ名・列名・行数を返す"""
+    if _is_demo_mode():
+        return [{"error": "デモモード（認証情報なし）"}]
+    try:
+        client = _get_gspread_client()
+    except Exception as e:
+        return [{"error": f"認証失敗: {e}"}]
+
+    spreadsheet_ids: list[str] = list(st.secrets["sheets"]["spreadsheet_ids"])
+    results = []
+    for sheet_id in spreadsheet_ids:
+        try:
+            spreadsheet = client.open_by_key(sheet_id)
+            tabs = spreadsheet.worksheets()
+            for ws in tabs:
+                matched = "満足度" in ws.title
+                info: dict = {"tab": ws.title, "matches_filter": matched}
+                if matched:
+                    try:
+                        values = ws.get_all_values()
+                        info["rows"] = len(values) - 1 if len(values) > 1 else 0
+                        info["headers"] = values[0] if values else []
+                    except Exception as e:
+                        info["read_error"] = str(e)
+                results.append(info)
+        except Exception as e:
+            results.append({"sheet_id": sheet_id, "error": str(e)})
+    return results
+
+
 @st.cache_data(ttl=300)
 def load_all_data() -> pd.DataFrame:
     """全スプレッドシートからデータを取得し結合する。5分ごとに自動更新。"""

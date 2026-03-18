@@ -13,7 +13,7 @@ from charts import (
     line_chart_monthly_trend,
     line_chart_self_effort_trend,
 )
-from data import _is_demo_mode, filter_data, get_nps_score, get_response_rate, load_all_data
+from data import _is_demo_mode, debug_sheet_info, filter_data, get_nps_score, get_response_rate, load_all_data
 
 
 st.set_page_config(
@@ -750,6 +750,20 @@ def main() -> None:
         dev_mode = False
     if dev_mode:
         st.markdown(_CSS, unsafe_allow_html=True)
+        with st.expander("🔍 デバッグ情報（dev_mode）", expanded=True):
+            infos = debug_sheet_info()
+            for info in infos:
+                if "error" in info:
+                    st.error(info["error"])
+                else:
+                    matched = info.get("matches_filter", False)
+                    icon = "✅" if matched else "⬜"
+                    st.markdown(f"**{icon} タブ名:** `{info['tab']}`")
+                    if matched:
+                        st.markdown(f"- 行数: {info.get('rows', '?')}")
+                        st.markdown(f"- 列名: `{info.get('headers', [])}`")
+                        if "read_error" in info:
+                            st.error(f"読み込みエラー: {info['read_error']}")
         show_dashboard("Developer", None)
         return
 
