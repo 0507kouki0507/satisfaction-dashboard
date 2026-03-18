@@ -268,31 +268,53 @@ html, body, [class*="css"], .stMarkdown, .stText {
 .comment-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-top: 4px;
+    gap: 16px;
+    margin-top: 8px;
 }
 .comment-card {
     background: white;
-    border-radius: 14px;
-    padding: 18px 20px;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.05), 0 2px 8px rgba(15,23,42,0.03);
-    border-left: 3.5px solid var(--bcolor);
-    transition: box-shadow .18s;
+    border-radius: 16px;
+    padding: 22px 24px 20px;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
+    position: relative;
+    transition: transform .18s, box-shadow .18s;
+    overflow: hidden;
 }
-.comment-card:hover { box-shadow: 0 6px 24px rgba(15,23,42,0.09); }
+.comment-card::before {
+    content: '\201C';
+    position: absolute;
+    top: 10px; right: 18px;
+    font-size: 72px;
+    font-family: Georgia, serif;
+    color: var(--bcolor);
+    opacity: 0.1;
+    line-height: 1;
+    pointer-events: none;
+}
+.comment-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--bcolor);
+    border-radius: 16px 16px 0 0;
+}
+.comment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(15,23,42,0.10);
+}
 .comment-meta {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 .comment-pj {
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 700;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 99px;
-    letter-spacing: .05em;
-    text-transform: uppercase;
+    letter-spacing: .04em;
 }
 .comment-date {
     font-size: 11px;
@@ -303,7 +325,7 @@ html, body, [class*="css"], .stMarkdown, .stText {
 .comment-text {
     font-size: 13.5px;
     color: #334155;
-    line-height: 1.75;
+    line-height: 1.8;
 }
 
 /* ===== SIDEBAR CUSTOM COMPONENTS ===== */
@@ -495,7 +517,8 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
 
 
 def show_comments(df: pd.DataFrame) -> None:
-    comments = df[["date", "project_name", "comment"]].dropna(subset=["comment"])
+    cols_needed = [c for c in ["date", "project_name", "comment", "score"] if c in df.columns]
+    comments = df[cols_needed].dropna(subset=["comment"])
     comments = comments[comments["comment"].astype(str).str.strip() != ""]
     if comments.empty:
         st.info("表示できるコメントがありません")
@@ -505,25 +528,42 @@ def show_comments(df: pd.DataFrame) -> None:
     color_map = {p: _PROJECT_COLORS[i % len(_PROJECT_COLORS)] for i, p in enumerate(projects)}
 
     comments = comments.sort_values("date", ascending=False).reset_index(drop=True)
-    _section("フリーコメント", f"{len(comments)}件", "#8B5CF6", "#F5F3FF")
+    total = len(comments)
+    _section("フリーコメント", f"{total}件", "#8B5CF6", "#F5F3FF")
+
+    # 表示件数コントロール
+    show_all = st.checkbox("すべて表示", value=False) if total > 10 else True
+    display = comments if show_all else comments.head(10)
 
     cards = ""
-    for _, row in comments.iterrows():
+    for _, row in display.iterrows():
         date_str = (
             f"{row['date'].year}年{row['date'].month}月{row['date'].day}日"
             if pd.notna(row["date"]) else ""
         )
         c = color_map.get(row["project_name"], "#4F46E5")
+        score_html = ""
+        if "score" in row and pd.notna(row["score"]):
+            stars = "★" * round(row["score"]) + "☆" * (10 - round(row["score"]))
+            score_html = f'<span style="color:{c};font-size:11px;letter-spacing:1px">{stars}</span>'
         cards += (
             f'<div class="comment-card" style="--bcolor:{c}">'
             f'<div class="comment-meta">'
-            f'<span class="comment-pj" style="background:{c}1A;color:{c}">{row["project_name"]}</span>'
+            f'<span class="comment-pj" style="background:{c}18;color:{c}">{row["project_name"]}</span>'
+            f'{score_html}'
             f'<span class="comment-date">{date_str}</span>'
             f'</div>'
             f'<div class="comment-text">{row["comment"]}</div>'
             f'</div>'
         )
     st.markdown(f'<div class="comment-grid">{cards}</div>', unsafe_allow_html=True)
+
+    if not show_all and total > 10:
+        st.markdown(
+            f'<p style="text-align:center;color:#94A3B8;font-size:12px;margin-top:12px">'
+            f'残り {total - 10} 件 ／ 合計 {total} 件</p>',
+            unsafe_allow_html=True,
+        )
 
 
 def show_dashboard(name: str, authenticator) -> None:
