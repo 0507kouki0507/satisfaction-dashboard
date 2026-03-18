@@ -515,9 +515,13 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
     avg_score    = df["score"].mean()
     median_score = df["score"].median()
     avg_effort   = df["self_effort_score"].mean()
-    respondents  = len(df)
     rr           = get_response_rate(df)
     nps          = get_nps_score(df)
+
+    # 回答者数・受講生数
+    total_students = df["total_students"].sum()
+    respondents    = df["respondents"].sum() if df["respondents"].notna().any() else len(df)
+    has_total      = not pd.isna(total_students) and total_students > 0
 
     sd, sdir = _month_delta(df, "score")
     ed, edir = _month_delta(df, "self_effort_score")
@@ -526,6 +530,7 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
     ec = _color_for_ratio(avg_effort / 100) if not pd.isna(avg_effort) else "#94A3B8"
     nc = _color_for_ratio((nps + 100) / 200) if nps is not None else "#94A3B8"
     rr_val = f"{rr:.1f}%" if rr > 0 else "—"
+    rr_color = _color_for_ratio(rr / 100) if rr > 0 else "#94A3B8"
 
     def card(icon, label, value, sub, accent, vcolor, delta=""):
         return (
@@ -538,6 +543,13 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
             f'</div>'
         )
 
+    if has_total:
+        resp_value = f"{int(respondents):,}"
+        resp_sub   = f"受講生 {int(total_students):,} 人中"
+    else:
+        resp_value = f"{int(respondents):,}"
+        resp_sub   = "アンケート回答数"
+
     html = (
         card("⭐", "平均満足度",
              f"{avg_score:.1f}" if not pd.isna(avg_score) else "—",
@@ -549,12 +561,10 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
                f"{avg_effort:.1f}" if not pd.isna(avg_effort) else "—",
                "/ 100点満点", "#06B6D4", ec, _delta_html(ed, edir, "pt"))
         + card("👥", "回答者数",
-               f"{respondents:,}",
-               "フィルター期間の合計", "#8B5CF6", "#0F172A")
+               resp_value, resp_sub, "#8B5CF6", "#0F172A")
         + card("📝", "回答率",
                rr_val,
-               "回答者 ÷ 受講生", "#10B981",
-               _color_for_ratio(rr / 100) if rr > 0 else "#94A3B8")
+               "アンケート回答者 ÷ 受講生", "#10B981", rr_color)
         + card("📣", "NPS スコア",
                f"{nps:.1f}" if nps is not None else "—",
                "推薦者% − 批判者%", "#F59E0B", nc)
