@@ -26,24 +26,21 @@ def setup_authenticator() -> tuple[stauth.Authenticate, dict]:
     return authenticator, config
 
 
-def show_login_page() -> tuple[str | None, bool, str | None]:
+def show_login_page() -> tuple[str | None, bool | None, str | None]:
     """
     ログイン画面を表示し、認証状態を返す。
+    streamlit-authenticator 0.4.x は session_state に結果を格納する。
 
     Returns:
         (name, authentication_status, username)
     """
     authenticator, _ = setup_authenticator()
 
-    name, authentication_status, username = authenticator.login(
-        location="main",
-        fields={
-            "Form name": "顧客満足度ダッシュボード ログイン",
-            "Username": "ユーザー名",
-            "Password": "パスワード",
-            "Login": "ログイン",
-        },
-    )
+    authenticator.login(location="main")
+
+    name = st.session_state.get("name")
+    authentication_status = st.session_state.get("authentication_status")
+    username = st.session_state.get("username")
 
     if authentication_status is False:
         st.error("ユーザー名またはパスワードが正しくありません")
