@@ -498,7 +498,7 @@ def show_page_header(df: pd.DataFrame, period_label: str, project_label: str) ->
         <div class="page-header">
             <div class="page-header-left">
                 <div class="page-header-eyebrow">📊 Satisfaction Dashboard</div>
-                <div class="page-header-title">顧客満足度ダッシュボード</div>
+                <div class="page-header-title">プロジェクト別顧客満足度ダッシュボード</div>
                 <div class="page-header-meta">{period_label}　／　{project_label}</div>
             </div>
             <div class="page-header-score">
