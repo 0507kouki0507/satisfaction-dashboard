@@ -724,12 +724,12 @@ def show_dashboard(name: str, authenticator) -> None:
 
     # 満足度セクション
     _section("満足度スコア", "1〜10点", "#4F46E5", "#EEF2FF")
-    c1, c2 = st.columns([3, 1])
+    st.plotly_chart(line_chart_monthly_trend(filtered), use_container_width=True)
+    c1, c2 = st.columns([2, 1])
     with c1:
-        st.plotly_chart(line_chart_monthly_trend(filtered), use_container_width=True)
+        st.plotly_chart(bar_chart_project_comparison(filtered), use_container_width=True)
     with c2:
         st.plotly_chart(histogram_score_distribution(filtered), use_container_width=True)
-    st.plotly_chart(bar_chart_project_comparison(filtered), use_container_width=True)
 
     # カテゴリ別満足度セクション
     _section("カテゴリ別 満足度", "動画 / サポート / システム", "#6366F1", "#EEF2FF")
