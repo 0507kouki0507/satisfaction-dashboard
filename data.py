@@ -175,6 +175,8 @@ def load_all_data() -> pd.DataFrame:
         try:
             spreadsheet = client.open_by_key(sheet_id)
             for worksheet in spreadsheet.worksheets():
+                if "満足度" not in worksheet.title:
+                    continue
                 try:
                     df = _worksheet_to_df(worksheet)
                 except Exception as e:
