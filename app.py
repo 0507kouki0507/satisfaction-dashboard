@@ -280,17 +280,6 @@ html, body, [class*="css"], .stMarkdown, .stText {
     transition: transform .18s, box-shadow .18s;
     overflow: hidden;
 }
-.comment-card::before {
-    content: '\201C';
-    position: absolute;
-    top: 10px; right: 18px;
-    font-size: 72px;
-    font-family: Georgia, serif;
-    color: var(--bcolor);
-    opacity: 0.1;
-    line-height: 1;
-    pointer-events: none;
-}
 .comment-card::after {
     content: '';
     position: absolute;
@@ -392,6 +381,63 @@ html, body, [class*="css"], .stMarkdown, .stText {
     color: #A5B4FC;
     font-weight: 500;
     margin: 8px 0;
+}
+
+/* ===== BACKGROUND WATERMARK ===== */
+[data-testid="stAppViewContainer"]::before {
+    content: 'PdC';
+    position: fixed;
+    bottom: -40px;
+    right: -20px;
+    font-size: 320px;
+    font-weight: 900;
+    font-family: 'Inter', sans-serif;
+    color: #4F46E5;
+    opacity: 0.03;
+    letter-spacing: -.05em;
+    pointer-events: none;
+    z-index: 0;
+    line-height: 1;
+    user-select: none;
+}
+
+/* ===== PdC LOGO ===== */
+.pdc-logo {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 4px;
+}
+.pdc-logo-inner {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+.pdc-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -.03em;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(79,70,229,0.4);
+}
+.pdc-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+}
+.pdc-sub {
+    font-size: 9.5px;
+    color: #475569;
+    margin-top: 2px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
 }
 
 /* ===== MISC ===== */
@@ -544,8 +590,13 @@ def show_comments(df: pd.DataFrame) -> None:
         c = color_map.get(row["project_name"], "#4F46E5")
         score_html = ""
         if "score" in row and pd.notna(row["score"]):
-            stars = "★" * round(row["score"]) + "☆" * (10 - round(row["score"]))
-            score_html = f'<span style="color:{c};font-size:11px;letter-spacing:1px">{stars}</span>'
+            score_val = f"{row['score']:.1f}"
+            score_html = (
+                f'<span style="display:inline-flex;align-items:center;gap:4px;'
+                f'background:{c}15;color:{c};border:1px solid {c}40;'
+                f'font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;">'
+                f'⭐ 満足度 {score_val}<span style="opacity:0.5;font-weight:400">/10</span></span>'
+            )
         cards += (
             f'<div class="comment-card" style="--bcolor:{c}">'
             f'<div class="comment-meta">'
@@ -572,9 +623,14 @@ def show_dashboard(name: str, authenticator) -> None:
     with st.sidebar:
         initials = name[0].upper() if name else "?"
         st.markdown(
-            f'<div class="sb-logo">'
-            f'<div class="sb-logo-mark">📊 Satisfaction</div>'
-            f'<div class="sb-logo-sub">Dashboard</div>'
+            f'<div class="pdc-logo">'
+            f'  <div class="pdc-logo-inner">'
+            f'    <div class="pdc-icon">PdC</div>'
+            f'    <div>'
+            f'      <div class="pdc-name">PdC</div>'
+            f'      <div class="pdc-sub">Satisfaction Dashboard</div>'
+            f'    </div>'
+            f'  </div>'
             f'</div>'
             f'<div class="sb-user">'
             f'<div class="sb-avatar">{initials}</div>'
