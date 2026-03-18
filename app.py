@@ -514,7 +514,7 @@ def show_page_header(df: pd.DataFrame, period_label: str, project_label: str) ->
 def show_kpi_cards(df: pd.DataFrame) -> None:
     avg_score    = df["score"].mean()
     median_score = df["score"].median()
-    avg_effort   = df["self_effort_score"].mean()
+    avg_effort   = df["self_effort_score"].median()
     rr           = get_response_rate(df)
     nps          = get_nps_score(df)
 
@@ -559,7 +559,7 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
                "/ 10点満点", "#6366F1", "#0F172A")
         + card("💪", "自身の取り組み",
                f"{avg_effort:.1f}" if not pd.isna(avg_effort) else "—",
-               "/ 100点満点", "#06B6D4", ec, _delta_html(ed, edir, "pt"))
+               "中央値 / 100点満点", "#06B6D4", ec, _delta_html(ed, edir, "pt"))
         + card("👥", "回答者数",
                resp_value, resp_sub, "#8B5CF6", "#0F172A")
         + card("📝", "回答率",
