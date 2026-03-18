@@ -155,7 +155,7 @@ def bar_chart_project_comparison(df: pd.DataFrame) -> go.Figure:
     )
     return _base(
         fig,
-        yaxis=dict(**_LAYOUT["yaxis"], range=[0, 12]),
+        yaxis=dict(**_LAYOUT["yaxis"], range=[0, 13]),
         bargap=0.3, bargroupgap=0.08,
         uniformtext_minsize=10, uniformtext_mode="hide",
     )
@@ -227,7 +227,7 @@ def bar_chart_category_scores(df: pd.DataFrame) -> go.Figure:
     )
     return _base(
         fig,
-        yaxis=dict(**_LAYOUT["yaxis"], range=[0, 12]),
+        yaxis=dict(**_LAYOUT["yaxis"], range=[0, 13]),
         bargap=0.35,
         xaxis=dict(**_LAYOUT["xaxis"]),
     )

@@ -87,6 +87,9 @@ html, body, [class*="css"], .stMarkdown, .stText {
     position: relative;
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(79,70,229,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 .page-header::before {
     content: '';
@@ -124,16 +127,18 @@ html, body, [class*="css"], .stMarkdown, .stText {
     opacity: 0.6;
     font-weight: 400;
 }
+.page-header-left {
+    flex: 1;
+    min-width: 0;
+    padding-right: 24px;
+}
 .page-header-score {
-    position: absolute;
-    right: 36px;
-    top: 50%;
-    transform: translateY(-50%);
     text-align: right;
+    flex-shrink: 0;
     z-index: 1;
 }
 .page-header-score-value {
-    font-size: 56px;
+    font-size: 52px;
     font-weight: 900;
     letter-spacing: -.04em;
     line-height: 1;
@@ -154,15 +159,19 @@ html, body, [class*="css"], .stMarkdown, .stText {
     gap: 12px;
     margin: 20px 0 8px;
 }
+@media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
 .kpi-card {
     background: white;
     border-radius: 16px;
-    padding: 22px 20px 18px;
+    padding: 18px 16px 14px;
     box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
     position: relative;
     overflow: hidden;
     transition: transform .18s, box-shadow .18s;
     cursor: default;
+    min-width: 0;
 }
 .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(15,23,42,0.1); }
 .kpi-card::before {
@@ -173,38 +182,49 @@ html, body, [class*="css"], .stMarkdown, .stText {
     background: var(--accent);
     border-radius: 16px 16px 0 0;
 }
-.kpi-icon { font-size: 22px; margin-bottom: 14px; display: block; }
+.kpi-icon { font-size: 20px; margin-bottom: 10px; display: block; }
 .kpi-label {
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: .08em;
+    letter-spacing: .06em;
     text-transform: uppercase;
     color: #94A3B8;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .kpi-value {
-    font-size: 36px;
+    font-size: 28px;
     font-weight: 800;
     color: var(--value-color, #0F172A);
     line-height: 1;
     letter-spacing: -.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .kpi-delta {
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 600;
-    margin-top: 10px;
+    margin-top: 8px;
     display: flex;
     align-items: center;
     gap: 3px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 .kpi-delta.up   { color: #10B981; }
 .kpi-delta.down { color: #EF4444; }
 .kpi-delta.neutral { color: #94A3B8; }
 .kpi-sub {
-    font-size: 10.5px;
+    font-size: 10px;
     color: #CBD5E1;
     margin-top: 4px;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ===== SECTION HEADER ===== */
@@ -408,9 +428,11 @@ def show_page_header(df: pd.DataFrame, period_label: str, project_label: str) ->
     st.markdown(
         f"""
         <div class="page-header">
-            <div class="page-header-eyebrow">📊 Satisfaction Dashboard</div>
-            <div class="page-header-title">顧客満足度ダッシュボード</div>
-            <div class="page-header-meta">{period_label}　／　{project_label}</div>
+            <div class="page-header-left">
+                <div class="page-header-eyebrow">📊 Satisfaction Dashboard</div>
+                <div class="page-header-title">顧客満足度ダッシュボード</div>
+                <div class="page-header-meta">{period_label}　／　{project_label}</div>
+            </div>
             <div class="page-header-score">
                 <div class="page-header-score-value">{avg_str}</div>
                 <div class="page-header-score-label">平均満足度 / 10</div>
