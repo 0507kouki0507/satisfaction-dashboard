@@ -693,7 +693,8 @@ def show_dashboard(name: str, authenticator) -> None:
             unsafe_allow_html=True,
         )
         st.markdown("<br>", unsafe_allow_html=True)
-        show_logout_button(authenticator)
+        if authenticator is not None:
+            show_logout_button(authenticator)
 
     # フィルター適用
     filtered = filter_data(
@@ -743,6 +744,12 @@ def show_dashboard(name: str, authenticator) -> None:
 
 
 def main() -> None:
+    dev_mode = st.secrets.get("app", {}).get("dev_mode", False)
+    if dev_mode:
+        st.markdown(_CSS, unsafe_allow_html=True)
+        show_dashboard("Developer", None)
+        return
+
     authenticator, _ = setup_authenticator()
     name, authentication_status, username = show_login_page(authenticator)
 

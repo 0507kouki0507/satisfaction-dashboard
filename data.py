@@ -158,16 +158,22 @@ def load_all_data() -> pd.DataFrame:
         try:
             spreadsheet = client.open_by_key(sheet_id)
             for worksheet in spreadsheet.worksheets():
-                records = worksheet.get_all_records()
+                try:
+                    records = worksheet.get_all_records()
+                except Exception as e:
+                    st.warning(f"シート「{worksheet.title}」の行取得に失敗: {e}")
+                    continue
                 if not records:
                     continue
                 df = pd.DataFrame(records)
                 df = _normalize_dataframe(df)
+                if df.empty:
+                    continue
                 if df["project_name"].isna().all():
                     df["project_name"] = worksheet.title
                 dfs.append(df)
         except Exception as e:
-            st.warning(f"スプレッドシート {sheet_id} の読み込みに失敗しました: {e}")
+            st.error(f"スプレッドシート({sheet_id})へのアクセスに失敗しました。\n\nエラー: {e}\n\nサービスアカウント pdc-492@my-dashboard-490511.iam.gserviceaccount.com に共有されているか確認してください。")
 
     if not dfs:
         return pd.DataFrame(columns=REQUIRED_COLS)
