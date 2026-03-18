@@ -1,0 +1,22 @@
+credentials:
+  usernames:
+    admin:
+      email: admin@example.com
+      name: 管理者
+      # デモ用パスワード: admin1234
+      # 本番運用前に必ず変更すること
+      password: "$2b$12$YpB8G7flMH7HJxhNRZSBQ.ZTmeXrUjTXiQ05FLeM1HVEn/f8jUcze"
+    member1:
+      email: member1@example.com
+      name: メンバー1
+      # デモ用パスワード: member1234
+      # 本番運用前に必ず変更すること
+      password: "$2b$12$XSEsljw/5aqlwJgbbWc7L.VAoZkop5/gDT4wanySYkhb9tCentHoy"
+
+cookie:
+  expiry_days: 7
+  key: "satisfaction_dashboard_secret_key"  # 本番ではランダムな文字列に変更
+  name: "satisfaction_dashboard_cookie"
+
+preauthorized:
+  emails: []

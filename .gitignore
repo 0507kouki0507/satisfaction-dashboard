@@ -1,5 +1,4 @@
-# 認証・APIキー（絶対にコミットしない）
-config.yaml
+# APIキー（絶対にコミットしない）
 .streamlit/secrets.toml
 
 # Python
