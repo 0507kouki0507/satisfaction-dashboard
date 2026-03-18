@@ -5,9 +5,11 @@ import streamlit as st
 
 from auth import setup_authenticator, show_login_page, show_logout_button
 from charts import (
+    bar_chart_category_scores,
     bar_chart_project_comparison,
     histogram_score_distribution,
     histogram_self_effort_distribution,
+    line_chart_category_trend,
     line_chart_monthly_trend,
     line_chart_self_effort_trend,
 )
@@ -148,8 +150,8 @@ html, body, [class*="css"], .stMarkdown, .stText {
 /* ===== KPI GRID ===== */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
     margin: 20px 0 8px;
 }
 .kpi-card {
@@ -423,6 +425,7 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
     avg_score    = df["score"].mean()
     median_score = df["score"].median()
     avg_effort   = df["self_effort_score"].mean()
+    respondents  = len(df)
     rr           = get_response_rate(df)
     nps          = get_nps_score(df)
 
@@ -431,8 +434,8 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
 
     sc = _color_for_ratio(avg_score / 10) if not pd.isna(avg_score) else "#94A3B8"
     ec = _color_for_ratio(avg_effort / 100) if not pd.isna(avg_effort) else "#94A3B8"
-    rc = _color_for_ratio(rr / 100)
     nc = _color_for_ratio((nps + 100) / 200) if nps is not None else "#94A3B8"
+    rr_val = f"{rr:.1f}%" if rr > 0 else "—"
 
     def card(icon, label, value, sub, accent, vcolor, delta=""):
         return (
@@ -455,9 +458,13 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
         + card("💪", "自身の取り組み",
                f"{avg_effort:.1f}" if not pd.isna(avg_effort) else "—",
                "/ 100点満点", "#06B6D4", ec, _delta_html(ed, edir, "pt"))
+        + card("👥", "回答者数",
+               f"{respondents:,}",
+               "フィルター期間の合計", "#8B5CF6", "#0F172A")
         + card("📝", "回答率",
-               f"{rr:.1f}%" if rr > 0 else "—",
-               "回答者 ÷ 受講生", "#10B981", rc)
+               rr_val,
+               "回答者 ÷ 受講生", "#10B981",
+               _color_for_ratio(rr / 100) if rr > 0 else "#94A3B8")
         + card("📣", "NPS スコア",
                f"{nps:.1f}" if nps is not None else "—",
                "推薦者% − 批判者%", "#F59E0B", nc)
@@ -586,6 +593,14 @@ def show_dashboard(name: str, authenticator) -> None:
     with c2:
         st.plotly_chart(histogram_score_distribution(filtered), use_container_width=True)
     st.plotly_chart(bar_chart_project_comparison(filtered), use_container_width=True)
+
+    # カテゴリ別満足度セクション
+    _section("カテゴリ別 満足度", "動画 / サポート / システム", "#6366F1", "#EEF2FF")
+    c5, c6 = st.columns([2, 1])
+    with c5:
+        st.plotly_chart(line_chart_category_trend(filtered), use_container_width=True)
+    with c6:
+        st.plotly_chart(bar_chart_category_scores(filtered), use_container_width=True)
 
     # 自身の取り組みセクション
     _section("自身の取り組み", "1〜100点", "#06B6D4", "#ECFEFF")

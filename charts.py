@@ -189,3 +189,81 @@ def histogram_self_effort_distribution(df: pd.DataFrame) -> go.Figure:
         xaxis=dict(**_LAYOUT["xaxis"], range=[0, 100]),
         bargap=0.05,
     )
+
+
+def bar_chart_category_scores(df: pd.DataFrame) -> go.Figure:
+    """カテゴリ別満足度（動画・サポート・システム）横並び棒グラフ"""
+    cats = {
+        "video_score":   ("動画カリキュラム", "#4F46E5"),
+        "support_score": ("サポート",         "#06B6D4"),
+        "system_score":  ("システム",         "#10B981"),
+    }
+
+    rows = []
+    for col, (label, _) in cats.items():
+        if col in df.columns:
+            rows.append({"カテゴリ": label, "平均スコア": round(df[col].mean(), 2)})
+
+    if not rows:
+        fig = go.Figure()
+        return _base(fig, title=dict(text="カテゴリ別満足度（データなし）", **_LAYOUT["title"]))
+
+    agg = pd.DataFrame(rows)
+    colors = [cats[c][1] for c in cats if c in df.columns]
+
+    fig = px.bar(
+        agg, x="カテゴリ", y="平均スコア",
+        color="カテゴリ",
+        color_discrete_sequence=colors,
+        text="平均スコア",
+        title="カテゴリ別 満足度スコア",
+    )
+    fig.update_traces(
+        marker_line_width=0,
+        texttemplate="%{text:.1f}",
+        textposition="outside",
+        textfont=dict(size=13, color="#475569"),
+        showlegend=False,
+    )
+    return _base(
+        fig,
+        yaxis=dict(**_LAYOUT["yaxis"], range=[0, 12]),
+        bargap=0.35,
+        xaxis=dict(**_LAYOUT["xaxis"]),
+    )
+
+
+def line_chart_category_trend(df: pd.DataFrame) -> go.Figure:
+    """動画・サポート・システム 月別推移（3線重ね）"""
+    cats = {
+        "video_score":   ("動画カリキュラム", "#4F46E5"),
+        "support_score": ("サポート",         "#06B6D4"),
+        "system_score":  ("システム",         "#10B981"),
+    }
+
+    monthly = df.assign(month=df["date"].dt.to_period("M").dt.to_timestamp())
+    fig = go.Figure()
+
+    for col, (label, color) in cats.items():
+        if col not in df.columns:
+            continue
+        agg = monthly.groupby("month")[col].mean().round(2).reset_index()
+        fig.add_trace(go.Scatter(
+            x=agg["month"], y=agg[col],
+            name=label,
+            mode="lines+markers",
+            line=dict(color=color, width=2.5),
+            marker=dict(size=7, line=dict(width=2, color="white")),
+        ))
+
+    fig.add_hline(
+        y=8, line_dash="dot", line_color="#CBD5E1", line_width=1.5,
+        annotation_text="目標 8.0", annotation_font_size=10,
+        annotation_font_color="#94A3B8", annotation_position="right",
+    )
+    return _base(
+        fig,
+        title=dict(text="カテゴリ別 満足度推移", **_LAYOUT["title"]),
+        yaxis=dict(**_LAYOUT["yaxis"], range=[0, 10.5]),
+        hovermode="x unified",
+    )
