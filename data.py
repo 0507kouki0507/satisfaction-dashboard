@@ -153,8 +153,6 @@ def load_all_data() -> pd.DataFrame:
     client = _get_gspread_client()
     spreadsheet_ids: list[str] = list(st.secrets["sheets"]["spreadsheet_ids"])
 
-    project_overrides: dict[str, str] = dict(st.secrets.get("sheet_project_overrides", {}))
-
     dfs: list[pd.DataFrame] = []
     for sheet_id in spreadsheet_ids:
         try:
@@ -167,8 +165,6 @@ def load_all_data() -> pd.DataFrame:
                 df = _normalize_dataframe(df)
                 if df["project_name"].isna().all():
                     df["project_name"] = worksheet.title
-                if sheet_id in project_overrides:
-                    df["project_name"] = project_overrides[sheet_id]
                 dfs.append(df)
         except Exception as e:
             st.warning(f"スプレッドシート {sheet_id} の読み込みに失敗しました: {e}")
