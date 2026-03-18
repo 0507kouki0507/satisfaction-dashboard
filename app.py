@@ -558,25 +558,27 @@ def show_dashboard(name: str, authenticator) -> None:
         all_projects = sorted(df["project_name"].dropna().unique().tolist())
         selected_projects = st.multiselect("プロジェクト", all_projects, default=all_projects, label_visibility="collapsed")
 
-        # 年フィルター（numpy.int64 → Python int に変換）
-        all_years = [int(y) for y in sorted(df["date"].dt.year.dropna().unique(), reverse=True)]
-        st.markdown('<div class="sb-section-label" style="margin-top:14px">年</div>', unsafe_allow_html=True)
-        selected_years: list[int] = st.multiselect(
-            "年", all_years, default=[all_years[0]], label_visibility="collapsed"
+        # 年月プルダウン
+        ym_pairs = (
+            df["date"].dropna()
+            .dt.to_period("M")
+            .drop_duplicates()
+            .sort_values(ascending=False)
+            .tolist()
         )
+        ym_labels = [f"{p.year}年{p.month}月" for p in ym_pairs]
+        ym_options = ["全期間"] + ym_labels
 
-        # 月フィルター
-        _MONTH_LABELS = {1:"1月",2:"2月",3:"3月",4:"4月",5:"5月",6:"6月",
-                         7:"7月",8:"8月",9:"9月",10:"10月",11:"11月",12:"12月"}
-        available_months = [int(m) for m in sorted(df["date"].dt.month.dropna().unique())]
-        st.markdown('<div class="sb-section-label" style="margin-top:14px">月</div>', unsafe_allow_html=True)
-        selected_month_labels: list[str] = st.multiselect(
-            "月", [_MONTH_LABELS[m] for m in available_months],
-            default=[_MONTH_LABELS[m] for m in available_months],
-            label_visibility="collapsed",
-        )
-        _LABEL_TO_NUM = {v: k for k, v in _MONTH_LABELS.items()}
-        selected_months: list[int] = [_LABEL_TO_NUM[l] for l in selected_month_labels]
+        st.markdown('<div class="sb-section-label" style="margin-top:14px">期間</div>', unsafe_allow_html=True)
+        selected_ym = st.selectbox("期間", ym_options, index=0, label_visibility="collapsed")
+
+        if selected_ym == "全期間":
+            selected_years: list[int] = []
+            selected_months: list[int] = []
+        else:
+            matched = ym_pairs[ym_labels.index(selected_ym)]
+            selected_years = [int(matched.year)]
+            selected_months = [int(matched.month)]
 
         st.markdown(
             f'<div class="sb-footer">'
@@ -595,9 +597,7 @@ def show_dashboard(name: str, authenticator) -> None:
         months=selected_months if selected_months else None,
     )
 
-    year_str = "、".join(str(y) for y in sorted(selected_years)) if selected_years else "全年"
-    month_str = "、".join(selected_month_labels) if selected_month_labels else "全月"
-    period_label = f"{year_str}　{month_str}"
+    period_label = selected_ym
     project_label = "、".join(selected_projects) if selected_projects else "全プロジェクト"
 
     if filtered.empty:
