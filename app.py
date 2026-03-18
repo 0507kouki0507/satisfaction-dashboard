@@ -659,12 +659,20 @@ def show_dashboard(name: str, authenticator) -> None:
             st.error("データが取得できませんでした")
             return
 
-        st.markdown('<div class="sb-section-label">フィルター</div>', unsafe_allow_html=True)
-
+        # ── アンケートフェーズ ──
+        st.markdown('<div class="sb-section-label">アンケートフェーズ</div>', unsafe_allow_html=True)
         all_projects = sorted(df["project_name"].dropna().unique().tolist())
-        selected_projects = st.multiselect("プロジェクト", all_projects, default=all_projects, label_visibility="collapsed")
+        # 表示用ラベル（「満足度：」プレフィックスを除去）
+        def _phase_label(p: str) -> str:
+            return p.replace("満足度：", "").replace("満足度", "").strip() or p
+        phase_labels = [_phase_label(p) for p in all_projects]
+        label_to_project = dict(zip(phase_labels, all_projects))
+        selected_phase_labels = st.multiselect(
+            "フェーズ", phase_labels, default=phase_labels, label_visibility="collapsed"
+        )
+        selected_projects = [label_to_project[l] for l in selected_phase_labels]
 
-        # 年月プルダウン
+        # ── 回答月 ──
         ym_pairs = (
             df["date"].dropna()
             .dt.to_period("M")
@@ -675,8 +683,8 @@ def show_dashboard(name: str, authenticator) -> None:
         ym_labels = [f"{p.year}年{p.month}月" for p in ym_pairs]
         ym_options = ["全期間"] + ym_labels
 
-        st.markdown('<div class="sb-section-label" style="margin-top:14px">期間</div>', unsafe_allow_html=True)
-        selected_ym = st.selectbox("期間", ym_options, index=0, label_visibility="collapsed")
+        st.markdown('<div class="sb-section-label" style="margin-top:14px">回答月</div>', unsafe_allow_html=True)
+        selected_ym = st.selectbox("回答月", ym_options, index=0, label_visibility="collapsed")
 
         if selected_ym == "全期間":
             selected_years: list[int] = []
@@ -705,7 +713,7 @@ def show_dashboard(name: str, authenticator) -> None:
     )
 
     period_label = selected_ym
-    project_label = "、".join(selected_projects) if selected_projects else "全プロジェクト"
+    project_label = "、".join(selected_phase_labels) if selected_phase_labels else "全フェーズ"
 
     if filtered.empty:
         st.warning("選択した条件に一致するデータがありません")
