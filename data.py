@@ -144,6 +144,23 @@ def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return df[REQUIRED_COLS]
 
 
+def _worksheet_to_df(worksheet) -> pd.DataFrame | None:
+    """ワークシートの全データを DataFrame に変換する（列名重複・空行に強い実装）"""
+    values = worksheet.get_all_values()
+    if len(values) < 2:
+        return None
+    headers = values[0]
+    rows = values[1:]
+    # 空行をスキップ
+    rows = [r for r in rows if any(str(c).strip() for c in r)]
+    if not rows:
+        return None
+    df = pd.DataFrame(rows, columns=headers)
+    # 空文字 → NaN
+    df = df.replace("", pd.NA)
+    return df
+
+
 @st.cache_data(ttl=300)
 def load_all_data() -> pd.DataFrame:
     """全スプレッドシートからデータを取得し結合する。5分ごとに自動更新。"""
@@ -159,21 +176,26 @@ def load_all_data() -> pd.DataFrame:
             spreadsheet = client.open_by_key(sheet_id)
             for worksheet in spreadsheet.worksheets():
                 try:
-                    records = worksheet.get_all_records()
+                    df = _worksheet_to_df(worksheet)
                 except Exception as e:
-                    st.warning(f"シート「{worksheet.title}」の行取得に失敗: {e}")
+                    st.warning(f"シート「{worksheet.title}」の読み込みに失敗: {e}")
                     continue
-                if not records:
+                if df is None:
                     continue
-                df = pd.DataFrame(records)
                 df = _normalize_dataframe(df)
                 if df.empty:
+                    st.warning(f"シート「{worksheet.title}」: データを正規化できませんでした。列名: {list(df.columns.tolist()) if hasattr(df, 'columns') else '不明'}")
                     continue
                 if df["project_name"].isna().all():
                     df["project_name"] = worksheet.title
                 dfs.append(df)
         except Exception as e:
-            st.error(f"スプレッドシート({sheet_id})へのアクセスに失敗しました。\n\nエラー: {e}\n\nサービスアカウント pdc-492@my-dashboard-490511.iam.gserviceaccount.com に共有されているか確認してください。")
+            st.error(
+                f"スプレッドシートへのアクセスに失敗しました。\n\n"
+                f"エラー: {e}\n\n"
+                f"サービスアカウント `pdc-492@my-dashboard-490511.iam.gserviceaccount.com` "
+                f"に閲覧権限が付与されているか確認してください。"
+            )
 
     if not dfs:
         return pd.DataFrame(columns=REQUIRED_COLS)

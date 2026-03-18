@@ -744,7 +744,10 @@ def show_dashboard(name: str, authenticator) -> None:
 
 
 def main() -> None:
-    dev_mode = st.secrets.get("app", {}).get("dev_mode", False)
+    try:
+        dev_mode = bool(st.secrets["app"]["dev_mode"])
+    except Exception:
+        dev_mode = False
     if dev_mode:
         st.markdown(_CSS, unsafe_allow_html=True)
         show_dashboard("Developer", None)
