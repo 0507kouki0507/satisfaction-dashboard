@@ -243,7 +243,7 @@ def show_comments(df: pd.DataFrame) -> None:
 
     comments = comments.sort_values("date", ascending=False).reset_index(drop=True)
     for _, row in comments.iterrows():
-        date_str = row["date"].strftime("%Y年%-m月%-d日") if pd.notna(row["date"]) else ""
+        date_str = f"{row['date'].year}年{row['date'].month}月{row['date'].day}日" if pd.notna(row["date"]) else ""
         st.markdown(
             f"""
             <div class="comment-card">
