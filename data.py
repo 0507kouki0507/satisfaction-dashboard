@@ -161,7 +161,8 @@ def load_all_data() -> pd.DataFrame:
 def filter_data(
     df: pd.DataFrame,
     projects: list[str] | None = None,
-    months: list[str] | None = None,
+    years: list[int] | None = None,
+    months: list[int] | None = None,
 ) -> pd.DataFrame:
     """フィルター条件でデータを絞り込む"""
     result = df.copy()
@@ -169,8 +170,11 @@ def filter_data(
     if projects:
         result = result[result["project_name"].isin(projects)]
 
+    if years:
+        result = result[result["date"].dt.year.isin(years)]
+
     if months:
-        result = result[result["date"].dt.strftime("%Y-%m").isin(months)]
+        result = result[result["date"].dt.month.isin(months)]
 
     return result
 
