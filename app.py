@@ -258,10 +258,8 @@ def show_comments(df: pd.DataFrame) -> None:
         )
 
 
-def show_dashboard(name: str) -> None:
+def show_dashboard(name: str, authenticator) -> None:
     st.markdown(_CSS, unsafe_allow_html=True)
-
-    authenticator, _ = setup_authenticator()
 
     with st.sidebar:
         st.markdown("### 📊 満足度 Dashboard")
@@ -346,13 +344,12 @@ def show_dashboard(name: str) -> None:
 
 
 def main() -> None:
-    if "authentication_status" not in st.session_state:
-        st.session_state["authentication_status"] = None
+    authenticator, _ = setup_authenticator()
 
-    name, authentication_status, username = show_login_page()
+    name, authentication_status, username = show_login_page(authenticator)
 
     if authentication_status:
-        show_dashboard(name)
+        show_dashboard(name, authenticator)
     elif authentication_status is False:
         st.stop()
     else:
