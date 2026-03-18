@@ -14,7 +14,41 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive.readonly",
 ]
 
-# 実際のシート列名 → 正規化後の列名
+# キーワードが列名に含まれていれば正規化名にマッピングする（完全一致が失敗した場合のフォールバック）
+# 各エントリ: (含むべきキーワードリスト, 除外キーワードリスト, 正規化後の列名)
+_KEYWORD_RULES: list[tuple[list[str], list[str], str]] = [
+    # 日付
+    (["日時", "日付", "回答日", "date"],                [],              "date"),
+    # 取り組み
+    (["取り組み"],                                      ["改善", "目標"], "self_effort_score"),
+    # 動画満足度
+    (["動画", "カリキュラム"],                           ["改善", "加えて"], "video_score"),
+    (["コンテンツ"],                                    ["改善", "加えて"], "video_score"),
+    # サポート満足度
+    (["サポート"],                                      ["改善", "意見", "について"], "support_score"),
+    # システム満足度
+    (["システム", "使いやす"],                           ["改善", "について"], "system_score"),
+    # NPS
+    (["勧め", "おすすめ", "推薦", "NPS", "nps"],        [],              "nps_score"),
+    # コメント（自由記述）
+    (["改善", "加えてほしい"],                           [],              "comment"),
+    (["コメント", "感想", "意見", "フィードバック"],      [],              "comment"),
+    # 受講生数
+    (["受講生数", "総受講"],                             [],              "total_students"),
+    # 回答者数
+    (["回答者数"],                                      [],              "respondents"),
+]
+
+
+def _keyword_map(col: str) -> str | None:
+    """列名に含まれるキーワードで正規化名を推定する（フォールバック）"""
+    for includes, excludes, target in _KEYWORD_RULES:
+        if any(k in col for k in includes) and not any(e in col for e in excludes):
+            return target
+    return None
+
+
+# 実際のシート列名 → 正規化後の列名（完全一致）
 COLUMN_MAP = {
     # 日付
     "回答日時": "date",
@@ -128,8 +162,19 @@ def _get_gspread_client() -> gspread.Client:
 
 def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """列名を正規化し、型変換・スコア計算を行う"""
+    # ① 完全一致マッピング
     df = df.rename(columns={col: COLUMN_MAP[col] for col in df.columns if col in COLUMN_MAP})
-    # 重複列は最初の列を残す（同じ情報が複数列に存在する場合）
+    # ② キーワードフォールバック（まだ正規化されていない列のみ対象）
+    normalized = set(REQUIRED_COLS)
+    rename_fallback = {}
+    for col in df.columns:
+        if col not in normalized:
+            mapped = _keyword_map(col)
+            if mapped and mapped not in df.columns:
+                rename_fallback[col] = mapped
+    if rename_fallback:
+        df = df.rename(columns=rename_fallback)
+    # ③ 重複列は最初の列を残す
     df = df.loc[:, ~df.columns.duplicated(keep="first")]
 
     for col in REQUIRED_COLS:
