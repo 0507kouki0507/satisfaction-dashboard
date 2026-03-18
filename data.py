@@ -148,6 +148,11 @@ def _generate_demo_data() -> pd.DataFrame:
 
 def _is_demo_mode() -> bool:
     try:
+        if st.secrets.get("app", {}).get("data_mode") == "demo":
+            return True
+    except Exception:
+        pass
+    try:
         key = st.secrets["gcp_service_account"].get("private_key", "")
         return not key or "YOUR_PRIVATE_KEY" in key
     except Exception:

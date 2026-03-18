@@ -778,16 +778,33 @@ def show_dashboard(name: str, authenticator) -> None:
             st.error("データが取得できませんでした")
             return
 
-        # ── アンケートフェーズ ──
-        st.markdown('<div class="sb-section-label">アンケートフェーズ</div>', unsafe_allow_html=True)
+        # ── プロジェクト比較 ──
         all_projects = sorted(df["project_name"].dropna().unique().tolist())
+        color_map_sb = {p: _PROJECT_COLORS[i % len(_PROJECT_COLORS)] for i, p in enumerate(all_projects)}
+
         # 表示用ラベル（「満足度：」プレフィックスを除去）
         def _phase_label(p: str) -> str:
             return p.replace("満足度：", "").replace("満足度", "").strip() or p
-        phase_labels = [_phase_label(p) for p in all_projects]
+
+        phase_labels  = [_phase_label(p) for p in all_projects]
         label_to_project = dict(zip(phase_labels, all_projects))
+
+        # カラーバッジ付き凡例
+        legend_html = '<div style="margin:10px 0 6px">'
+        for p, lbl in zip(all_projects, phase_labels):
+            c = color_map_sb[p]
+            legend_html += (
+                f'<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">'
+                f'  <span style="width:10px;height:10px;border-radius:50%;background:{c};flex-shrink:0"></span>'
+                f'  <span style="font-size:11px;color:#CBD5E1;font-weight:500">{lbl}</span>'
+                f'</div>'
+            )
+        legend_html += '</div>'
+
+        st.markdown('<div class="sb-section-label">プロジェクト比較</div>', unsafe_allow_html=True)
+        st.markdown(legend_html, unsafe_allow_html=True)
         selected_phase_labels = st.multiselect(
-            "フェーズ", phase_labels, default=phase_labels, label_visibility="collapsed"
+            "プロジェクト", phase_labels, default=phase_labels, label_visibility="collapsed"
         )
         selected_projects = [label_to_project[l] for l in selected_phase_labels]
 
