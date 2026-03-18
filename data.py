@@ -21,35 +21,40 @@ COLUMN_MAP = {
     "日付": "date",
     "date": "date",
     "Date": "date",
-    # プロジェクト名（列があれば使う、なければシート名を使う）
+    # プロジェクト名
     "プロジェクト名": "project_name",
     "project_name": "project_name",
     # 取り組み度（100点満点）
     "ここまでの学習を振り返ってみて、あなたの取り組み方は何点でしたか？（100点満点中）": "self_effort_score",
     "自身の取り組み": "self_effort_score",
+    "自身取組み": "self_effort_score",
     "self_effort_score": "self_effort_score",
     "取り組みスコア": "self_effort_score",
     # 満足度カテゴリ（各10段階）
     "動画カリキュラムの満足度はいかがですか？（10段階）": "video_score",
+    "コンテンツ": "video_score",
     "video_score": "video_score",
     "サポートの満足度はいかがですか？（10段階）": "support_score",
+    "サポート": "support_score",
     "support_score": "support_score",
     "システムの使いやすさはいかがですか？（10段階）": "system_score",
+    "システム": "system_score",
     "system_score": "system_score",
-    # 総合満足度（列があれば使う。なければ上の3つから計算）
+    # 総合満足度
     "満足度スコア": "score",
     "score": "score",
     "score_1_to_10": "score",
     # NPS（友人への推薦度 0〜10）
     "あなたは当校をどの程度友人や知人に勧めますか？": "nps_score",
+    "おすすめ度": "nps_score",
     "NPSスコア": "nps_score",
     "nps_score": "nps_score",
     "NPS": "nps_score",
-    # コメント（動画カリキュラム改善点を主コメントとして使用）
+    # コメント
     "動画カリキュラムについて、改善点や加えてほしい箇所などがあれば、お聞かせください。": "comment",
     "コメント": "comment",
     "comment": "comment",
-    # 受講生数・回答者数（列があれば使う）
+    # 受講生数・回答者数
     "受講生数": "total_students",
     "total_students": "total_students",
     "回答者数": "respondents",
@@ -124,6 +129,8 @@ def _get_gspread_client() -> gspread.Client:
 def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """列名を正規化し、型変換・スコア計算を行う"""
     df = df.rename(columns={col: COLUMN_MAP[col] for col in df.columns if col in COLUMN_MAP})
+    # 重複列は最初の列を残す（同じ情報が複数列に存在する場合）
+    df = df.loc[:, ~df.columns.duplicated(keep="first")]
 
     for col in REQUIRED_COLS:
         if col not in df.columns:
@@ -144,19 +151,36 @@ def _normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return df[REQUIRED_COLS]
 
 
+_HEADER_KEYWORDS = {
+    "回答日時", "自身取組み", "コンテンツ", "サポート", "システム",
+    "動画カリキュラムの満足度はいかがですか？（10段階）",
+    "ここまでの学習を振り返ってみて、あなたの取り組み方は何点でしたか？（100点満点中）",
+    "date", "Date", "score",
+}
+
+
+def _find_header_row(values: list[list]) -> int:
+    """ヘッダー行のインデックスを探す（サマリー行・空行をスキップ）"""
+    for i, row in enumerate(values):
+        if any(str(cell).strip() in _HEADER_KEYWORDS for cell in row):
+            return i
+    return 0
+
+
 def _worksheet_to_df(worksheet) -> pd.DataFrame | None:
-    """ワークシートの全データを DataFrame に変換する（列名重複・空行に強い実装）"""
+    """ワークシートの全データを DataFrame に変換する"""
     values = worksheet.get_all_values()
-    if len(values) < 2:
+    if not values:
         return None
-    headers = values[0]
-    rows = values[1:]
-    # 空行をスキップ
+    header_idx = _find_header_row(values)
+    if header_idx >= len(values) - 1:
+        return None
+    headers = values[header_idx]
+    rows = values[header_idx + 1:]
     rows = [r for r in rows if any(str(c).strip() for c in r)]
     if not rows:
         return None
     df = pd.DataFrame(rows, columns=headers)
-    # 空文字 → NaN
     df = df.replace("", pd.NA)
     return df
 
