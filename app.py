@@ -383,6 +383,92 @@ html, body, [class*="css"], .stMarkdown, .stText {
     margin: 8px 0;
 }
 
+/* ===== CATEGORY SCORECARD ===== */
+.cat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 4px 0 16px;
+}
+.cat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 20px 16px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
+    position: relative;
+    overflow: hidden;
+}
+.cat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--cat-color);
+    border-radius: 16px 16px 0 0;
+}
+.cat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.cat-icon-wrap {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--cat-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+}
+.cat-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1E293B;
+    letter-spacing: -.01em;
+}
+.cat-color-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--cat-color);
+    display: inline-block;
+    margin-right: 5px;
+    flex-shrink: 0;
+}
+.cat-score {
+    font-size: 38px;
+    font-weight: 900;
+    color: var(--cat-color);
+    line-height: 1;
+    letter-spacing: -.04em;
+    margin-bottom: 10px;
+}
+.cat-score span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #94A3B8;
+    margin-left: 2px;
+}
+.cat-bar-wrap {
+    background: #F1F5F9;
+    border-radius: 99px;
+    height: 7px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+.cat-bar {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--cat-color);
+    transition: width .6s ease;
+}
+.cat-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #94A3B8;
+    font-weight: 500;
+}
+
 /* ===== BACKGROUND WATERMARK ===== */
 [data-testid="stAppViewContainer"]::before {
     content: 'PdC';
@@ -572,6 +658,39 @@ def show_kpi_cards(df: pd.DataFrame) -> None:
     st.markdown(f'<div class="kpi-grid">{html}</div>', unsafe_allow_html=True)
 
 
+def show_category_infographic(df: pd.DataFrame) -> None:
+    """カテゴリ別スコアをインフォグラフィック形式で表示"""
+    cats = [
+        ("video_score",   "動画カリキュラム", "🎬", "#4F46E5", "#EEF2FF"),
+        ("support_score", "サポート",         "💬", "#06B6D4", "#ECFEFF"),
+        ("system_score",  "システム",         "💻", "#10B981", "#ECFDF5"),
+    ]
+    cards = ""
+    for col, name, icon, color, bg in cats:
+        if col not in df.columns or df[col].isna().all():
+            continue
+        avg = df[col].mean()
+        pct = avg / 10 * 100
+        cards += (
+            f'<div class="cat-card" style="--cat-color:{color};--cat-bg:{bg}">'
+            f'  <div class="cat-header">'
+            f'    <div class="cat-icon-wrap">{icon}</div>'
+            f'    <div>'
+            f'      <div style="display:flex;align-items:center">'
+            f'        <span class="cat-color-dot"></span>'
+            f'        <span class="cat-name">{name}</span>'
+            f'      </div>'
+            f'    </div>'
+            f'  </div>'
+            f'  <div class="cat-score">{avg:.1f}<span>/ 10</span></div>'
+            f'  <div class="cat-bar-wrap"><div class="cat-bar" style="width:{pct:.1f}%"></div></div>'
+            f'  <div class="cat-bar-label"><span>0</span><span>5</span><span>10</span></div>'
+            f'</div>'
+        )
+    if cards:
+        st.markdown(f'<div class="cat-grid">{cards}</div>', unsafe_allow_html=True)
+
+
 def show_comments(df: pd.DataFrame) -> None:
     cols_needed = [c for c in ["date", "project_name", "comment", "score"] if c in df.columns]
     comments = df[cols_needed].dropna(subset=["comment"])
@@ -733,14 +852,34 @@ def show_dashboard(name: str, authenticator) -> None:
 
     # カテゴリ別満足度セクション
     _section("カテゴリ別 満足度", "動画 / サポート / システム", "#6366F1", "#EEF2FF")
-    c5, c6 = st.columns([2, 1])
-    with c5:
-        st.plotly_chart(line_chart_category_trend(filtered), use_container_width=True)
-    with c6:
-        st.plotly_chart(bar_chart_category_scores(filtered), use_container_width=True)
+    show_category_infographic(filtered)
+    st.plotly_chart(line_chart_category_trend(filtered), use_container_width=True)
 
     # 自身の取り組みセクション
     _section("自身の取り組み", "1〜100点", "#06B6D4", "#ECFEFF")
+    effort_median = filtered["self_effort_score"].median()
+    if not pd.isna(effort_median):
+        pct = effort_median / 100 * 100
+        st.markdown(
+            f'<div style="background:white;border-radius:16px;padding:20px 24px;'
+            f'box-shadow:0 1px 3px rgba(15,23,42,0.06),0 4px 16px rgba(15,23,42,0.04);margin-bottom:12px">'
+            f'  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'
+            f'    <div style="width:36px;height:36px;border-radius:10px;background:#ECFEFF;'
+            f'         display:flex;align-items:center;justify-content:center;font-size:17px">💪</div>'
+            f'    <span style="font-size:13px;font-weight:700;color:#1E293B">自身の取り組みスコア（中央値）</span>'
+            f'  </div>'
+            f'  <div style="font-size:38px;font-weight:900;color:#06B6D4;line-height:1;margin-bottom:10px">'
+            f'    {effort_median:.0f}<span style="font-size:14px;font-weight:500;color:#94A3B8;margin-left:4px">/ 100</span>'
+            f'  </div>'
+            f'  <div style="background:#F1F5F9;border-radius:99px;height:10px;margin-bottom:6px;overflow:hidden">'
+            f'    <div style="width:{pct:.1f}%;height:100%;border-radius:99px;background:linear-gradient(90deg,#06B6D4,#0EA5E9)"></div>'
+            f'  </div>'
+            f'  <div style="display:flex;justify-content:space-between;font-size:10px;color:#94A3B8;font-weight:500">'
+            f'    <span>0</span><span>50</span><span>100</span>'
+            f'  </div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
     c3, c4 = st.columns([3, 1])
     with c3:
         st.plotly_chart(line_chart_self_effort_trend(filtered), use_container_width=True)
